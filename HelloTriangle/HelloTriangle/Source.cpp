@@ -10,6 +10,7 @@
 #include <iostream>
 #include <string>
 #include <assert.h>
+#include <vector>
 
 using namespace std;
 
@@ -18,6 +19,11 @@ using namespace std;
 
 // GLFW
 #include <GLFW/glfw3.h>
+
+//GLM
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 
 // Protótipo da função de callback de teclado
@@ -129,7 +135,7 @@ int main()
 
 		glUniform4f(colorLoc, 0.0f, 0.0f, 1.0f, 1.0f); //enviando cor para variável uniform inputColor
 
-		glDrawArrays(GL_TRIANGLES, 0, 6);
+		glDrawArrays(GL_TRIANGLES, 0, 100);
 
 		// Chamada de desenho - drawcall
 		// CONTORNO - GL_LINE_LOOP
@@ -142,8 +148,8 @@ int main()
 
 		
 		glUniform4f(colorLoc, 1.0f, 1.0f, 0.0f, 1.0f); //enviando cor para variável uniform inputColor
-		glDrawArrays(GL_POINTS, 0, 6);
-		
+		//glDrawArrays(GL_POINTS, 0, 6);
+
 
 		glBindVertexArray(0); //Desconectando o buffer de geometria
 
@@ -214,6 +220,26 @@ int setupShader()
 	return shaderProgram;
 }
 
+std::vector<GLfloat> createCircle(GLfloat centerX, GLfloat centerY, GLfloat radius, GLint segments) {
+
+	glm::vec2 center(0.0f, 0.0f);
+
+	std::vector<GLfloat> circleVertices;
+	GLfloat segmentAngle = 2.0f * 3.1415f / segments;
+
+	for (GLint i = 0; i < segments; ++i) {
+		GLfloat angle = i * segmentAngle;
+		circleVertices.push_back(centerX + radius * std::cos(angle));
+		circleVertices.push_back(centerY + radius * std::sin(angle));
+	}
+
+	// add the first vertex again to close the circle
+	circleVertices.push_back(centerX + radius);
+	circleVertices.push_back(centerY);
+
+	return circleVertices;
+}
+
 // Esta função está bastante harcoded - objetivo é criar os buffers que armazenam a 
 // geometria de um triângulo
 // Apenas atributo coordenada nos vértices
@@ -225,25 +251,16 @@ int setupGeometry()
 	// sequencial, já visando mandar para o VBO (Vertex Buffer Objects)
 	// Cada atributo do vértice (coordenada, cores, coordenadas de textura, normal, etc)
 	// Pode ser arazenado em um VBO único ou em VBOs separados
-	GLfloat vertices[] = {
-		-0.5, 0.5, 0.0,
-		0.5,  0.5, 0.0,
-		0.0,  0.0, 0.0,
-		 //outro triangulo vai aqui
-		0.0,  0.0,  0.0,
-	   -0.5, -0.5,  0.0,
-	    0.5, -0.5,  0.0
-		 
-	};
+	std::vector<GLfloat> vertices = createCircle(10.0f, 10.0f, 10.0f, 100);
 
-	GLuint VBO, VAO;
+	GLuint VBO, VAO, EBO;
 
 	//Geração do identificador do VBO
 	glGenBuffers(1, &VBO);
 	//Faz a conexão (vincula) do buffer como um buffer de array
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	//Envia os dados do array de floats para o buffer da OpenGl
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), &vertices[0], GL_STATIC_DRAW);
 
 	//Geração do identificador do VAO (Vertex Array Object)
 	glGenVertexArrays(1, &VAO);
@@ -257,7 +274,7 @@ int setupGeometry()
 	// Se está normalizado (entre zero e um)
 	// Tamanho em bytes 
 	// Deslocamento a partir do byte zero 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
 	glEnableVertexAttribArray(0);
 
 	// Observe que isso é permitido, a chamada para glVertexAttribPointer registrou o VBO como o objeto de buffer de vértice 
